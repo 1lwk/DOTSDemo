@@ -14,7 +14,7 @@ public partial struct AnimationSystem : ISystem
     }
 
     [BurstCompile] // 指定该结构体应使用 Burst 编译
-    // 定义部分结构体 AnimationJob，实现 IJobEntity 接口
+    // 定义部分结构体 AnimationJob，实现 IJobEntity 接口 用于编写并行任务的接口，允许你定义一个工作单元，该单元将在每个匹配的实体上执行一次
     public partial struct AnimationJob : IJobEntity
     {
         public float detaTime; // 定义公共浮点变量 detaTime，表示每帧的时间增量

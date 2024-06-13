@@ -409,7 +409,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7520398910855832335, guid: 550f7505416cf804eb29becad833e5fa, type: 3}
       propertyPath: lv
-      value: 300
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 7520398910855832335, guid: 550f7505416cf804eb29becad833e5fa, type: 3}
       propertyPath: spawnMonsterIntervaLMultiply

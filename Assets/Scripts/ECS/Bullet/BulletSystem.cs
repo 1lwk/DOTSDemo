@@ -1,3 +1,4 @@
+using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -6,12 +7,14 @@ using Unity.Transforms;
 
 public partial struct BulletSystem : ISystem // ¶¨Òå²¿·Ö½á¹¹Ìå BulletSystem£¬ÊµÏÖ ISystem ½Ó¿Ú
 {
-    // ¶¨Òå¾²Ì¬Ö»¶Á¹²Ïí¾²Ì¬±äÁ¿ createBulletCount
+    // ¶¨Òå¾²Ì¬Ö»¶Á¹²Ïí¾²Ì¬±äÁ¿ createBulletCountÊ¹ÓÃGetOrCreate¿ÉÒÔ±ÜÃâ¶à´Î´´½¨ 
+    // readonly static ¾²Ì¬Ö»¶Á GetOrCreate<BulletSystem>()´´½¨»ò»ñÈ¡Ò»¸ö "SharedStatic"µÄÊµÀı ÓëBulletSystemÏà¹Ø ±£Ö¤ÁËBulletSystem¹²ÏíÍ¬Ò»¸ö¾²Ì¬Êı¾İ
     public readonly static SharedStatic<int> createBulletCount = SharedStatic<int>.GetOrCreate<BulletSystem>();
 
-    // ¶¨ÒåÏµÍ³´´½¨Ê±µÄ³õÊ¼»¯·½·¨
+    // ¶¨ÒåÏµÍ³´´½¨Ê±µÄ³õÊ¼»¯·½·¨ SystemStateÏµÍ³ÔËĞĞµÄ×´Ì¬ÒÔ¼°Ïà¹ØÊı¾İ
     public void OnCreate(ref SystemState state)
     {
+        // Data ÊôĞÔÓÃÓÚ·ÃÎÊ»òĞŞ¸Ä SharedStatic<int> ÊµÀıÖĞµÄÊµ¼ÊÊı¾İÖµ
         createBulletCount.Data = 0; // ³õÊ¼»¯ createBulletCount Îª 0
         SharedData.singtonEntity.Data = state.EntityManager.CreateEntity(typeof(BulletCreateInfo)); // ´´½¨ BulletCreateInfo ÀàĞÍµÄÊµÌå
     }
@@ -19,11 +22,11 @@ public partial struct BulletSystem : ISystem // ¶¨Òå²¿·Ö½á¹¹Ìå BulletSystem£¬ÊµÏ
     // ¶¨ÒåÏµÍ³¸üĞÂ·½·¨
     public void OnUpdate(ref SystemState state)
     {
-        // »ñÈ¡²¢ĞĞÃüÁî»º³åÇø
+        // »ñÈ¡²¢ĞĞÃüÁî»º³åÇø ¿ÉÒÔÊµÀıºÍÉ¾³ıÊµÌå 
         EntityCommandBuffer.ParallelWriter ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
             .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-        // »ñÈ¡ BulletCreateInfo »º³åÇø
+        // »ñÈ¡ BulletCreateInfo »º³åÇø DynamicBufferÊÇÓÃÓÚ´¦Àí¶¯Ì¬Êı×éµÄÒ»¸ö½á¹¹ ÔÊĞíÎªÃ¿¸öÊµÌå´æ´¢Ò»¸ö¶¯Ì¬´óĞ¡µÄ»º´æÇø
         DynamicBuffer<BulletCreateInfo> bulletCreateInfoBuffer = SystemAPI.GetSingletonBuffer<BulletCreateInfo>();
         createBulletCount.Data = bulletCreateInfoBuffer.Length; // ¸üĞÂ×Óµ¯´´½¨ÊıÁ¿
 
@@ -32,18 +35,18 @@ public partial struct BulletSystem : ISystem // ¶¨Òå²¿·Ö½á¹¹Ìå BulletSystem£¬ÊµÏ
         {
             enemyLayerMask = 1 << 6, // µĞÈË²ãÑÚÂë
             ecb = ecb, // ²¢ĞĞÃüÁî»º³åÇø
-            deltaTime = SystemAPI.Time.DeltaTime, // Ã¿Ö¡Ê±¼äÔöÁ¿
+            deltaTime = SystemAPI.Time.DeltaTime, // Ã¿Ö¡Ê±¼äÔöÁ¿ ¼´Time.DeltaTime
             bulletCreateInfoBuffer = bulletCreateInfoBuffer, // ×Óµ¯´´½¨ĞÅÏ¢»º³åÇø
-            collisionWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>().CollisionWorld, // Åö×²ÊÀ½ç
-        }.ScheduleParallel();
-        state.CompleteDependency(); // Íê³ÉÒÀÀµ
+            collisionWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>().CollisionWorld, // Åö×²ÊÀ½ç Ò»°ã¿ÉÒÔÓÃÓÚÊµÌåÖ®¼ä¼ì²âÅö×² È·¶¨ËûÃÇÊÇ·ñÔÚ½Ó´¥»òÕßÏà»¥Ó°Ïì ´¦ÀíÎïÀí½»»¥Ê¹ÓÃ
+        }.ScheduleParallel();//×Ô¶¯Ê¹ÓÃµ±Ç°ÏµÍ³µÄÒÀÀµÀ´¹ÜÀíjobµÄµ÷¶È
+        state.CompleteDependency(); // Íê³ÉÒÀÀµ ÓÃÓÚÏÔÊ½µØÍê³Éµ±Ç°ÏµÍ³µÄËùÓĞÒÀÀµ¹¤×÷(jobs£©
 
         // Èç¹ûĞèÒª´´½¨µÄ×Óµ¯ÊıÁ¿´óÓÚ 0
         if (createBulletCount.Data > 0)
         {
             // ´´½¨ĞÂµÄ×Óµ¯ÊµÌåÊı×é
-            NativeArray<Entity> newBullets = new NativeArray<Entity>(createBulletCount.Data, Allocator.Temp);
-            ecb.Instantiate(int.MinValue, SystemAPI.GetSingleton<GameConfigData>().bulletPortotype, newBullets); // ÊµÀı»¯ĞÂµÄ×Óµ¯
+            NativeArray<Entity> newBullets = new NativeArray<Entity>(createBulletCount.Data, Allocator.Temp); //²ÎÊı1Êı×éµÄ³¤¶È ²ÎÊı2ÈçºÎ·ÖÅäÄÚ´æÕâÀïÖ¸µÄÊÇÁÙÊ±·ÖÅäÄÚ´æ Ö»ÔÚµ±Ç°Ö¡ÓĞĞ§ È»ºóÍ¬Ò»Ö¡ÊÍ·Å
+            ecb.Instantiate(int.MinValue, SystemAPI.GetSingleton<GameConfigData>().bulletPortotype, newBullets); // ÊµÀı»¯ĞÂµÄ×Óµ¯ µÚÒ»¸ö²ÎÊıSortKey Ö¸¶¨ÃüÁîµÄÅÅĞòË³Ğò Ô½Ğ¡Ô½ÏÈÖ´ĞĞ
 
             // ³õÊ¼»¯Ã¿¸öĞÂ×Óµ¯µÄ Transform ×é¼ş
             for (int i = 0; i < newBullets.Length; i++)
@@ -86,7 +89,7 @@ public partial struct BulletSystem : ISystem // ¶¨Òå²¿·Ö½á¹¹Ìå BulletSystem£¬ÊµÏ
                 if (createBulletCount.Data > 0)
                 {
                     int index = createBulletCount.Data -= 1; // ¸üĞÂ×Óµ¯´´½¨ÊıÁ¿
-                    bulletEnableState.ValueRW = true; // ÆôÓÃ×Óµ¯
+                    bulletEnableState.ValueRW = true; // ÆôÓÃ×Óµ¯µ¹¼ÆÊ±Ïú»ÙÊ±¼ä
                     sortEnableState.ValueRW = true; // ÆôÓÃäÖÈ¾ÅÅĞò±êÇ©
                     localTransform.Position = bulletCreateInfoBuffer[index].position; // ÉèÖÃ×Óµ¯Î»ÖÃ
                     localTransform.Rotation = bulletCreateInfoBuffer[index].rotation; // ÉèÖÃ×Óµ¯Ğı×ª
@@ -111,11 +114,12 @@ public partial struct BulletSystem : ISystem // ¶¨Òå²¿·Ö½á¹¹Ìå BulletSystem£¬ÊµÏ
 
             // ½øĞĞÉËº¦¼ì²â
             NativeList<DistanceHit> hits = new NativeList<DistanceHit>(Allocator.Temp);
+            // ÎïÀíÃüÃû¿Õ¼äÏÂµÄÒ»¸ö½á¹¹Ìå ¶¨ÒåÎïÀí¶ÔÏóµÄÅö×²¹ıÂË¹æÔòµÄ
             CollisionFilter filter = new CollisionFilter()
             {
-                BelongsTo = ~0u, // ÊôÓÚËùÓĞ²ã
-                CollidesWith = enemyLayerMask, // ÓëµĞÈË²ãÅö×²
-                GroupIndex = 0
+                BelongsTo = ~0u, // ÎïÌåËùÊôµÄ²ã
+                CollidesWith = enemyLayerMask, // ÎïÌå¿ÉÒÔÓëÄÄĞ©²ã·¢ÉúÅö×²
+                GroupIndex = 0 // 0±íÊ¾Ã»ÓĞÌØÊâµÄÅö×²¹æÔò
             };
 
             // ¼ì²éÊÇ·ñÓëµĞÈËÅö×²

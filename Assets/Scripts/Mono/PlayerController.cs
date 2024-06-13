@@ -152,7 +152,7 @@ public class PlayerController : MonoBehaviour
         float angleStep = Mathf.Clamp(360 / bulletQuantity, 0, 5f);
         for (int i = 1; i < bulletQuantity / 2; i++)
         {
-            buffer.Add(new BulletCreateInfo()
+            buffer.Add(new BulletCreateInfo()            
             {
                 position = gunRoot.position,
                 rotation = gunRoot.rotation * Quaternion.Euler(0, 0, angleStep * i),

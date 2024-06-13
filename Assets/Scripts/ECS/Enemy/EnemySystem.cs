@@ -7,6 +7,9 @@ using Unity.Transforms;
 public partial struct EnemySystem : ISystem // 定义部分结构体 EnemySystem，实现 ISystem 接口
 {
     // 定义三个键结构体，用于共享静态变量
+    //这三个 key1、key2 和 key3 是用来作为 SharedStatic 静态变量的键的。
+    //SharedStatic 是 Unity 的一个特性，用于在多个作业和线程之间共享静态数据。
+    //这些键结构体实际上是唯一标识，用于区分不同的 SharedStatic 实例。
     public struct key1 { }
     public struct key2 { }
     public struct key3 { }
@@ -77,7 +80,10 @@ public partial struct EnemySystem : ISystem // 定义部分结构体 EnemySystem，实现 
     }
 
     // 使用 EntityQueryOptions.IgnoreComponentEnabledState 忽略组件启用状态
-    // 使用 Burst 编译
+    // 使用BurstCompile特性 启用Unity Burst编译器优化代码执行性能
+    // Burst编译器会将标记的代码编译成高度优化的本地代码（native code）
+    // 以提高运行时的性能 在频繁执行的代码片段中尤为重要
+    // 游戏物理计算 数据计算 路径计算
     [WithOptions(EntityQueryOptions.IgnoreComponentEnabledState)]
     [BurstCompile]
     public partial struct EnemyJob : IJobEntity // 定义部分结构体 EnemyJob，实现 IJobEntity 接口
